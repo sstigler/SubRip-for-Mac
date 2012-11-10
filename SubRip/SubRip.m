@@ -55,6 +55,12 @@
     
     if (self) {
         self.subtitleItems = [NSMutableArray arrayWithCapacity:100];
+        
+        //add a blank text SubRipItem as index 0
+        SubRipItem *indexZeroItem=[SubRipItem new];
+        indexZeroItem.text=@" ";
+        [self.subtitleItems addObject:indexZeroItem];
+        
         BOOL success = [self _populateFromString:str];
         if (!success) {
             return nil;
@@ -152,7 +158,7 @@
 
 -(NSUInteger)indexOfSubRipItemWithStartTime:(CMTime)theTime {
     NSInteger __block desiredTimeInSeconds = theTime.value / theTime.timescale;
-    return [self.subtitleItems indexOfObjectPassingTest:^BOOL(id obj, NSUInteger idx, BOOL *stop) {
+    NSUInteger index = [self.subtitleItems indexOfObjectPassingTest:^BOOL(id obj, NSUInteger idx, BOOL *stop) {
         if ((desiredTimeInSeconds >= [(SubRipItem *)obj startTimeInSeconds]) &&
             (desiredTimeInSeconds <= [(SubRipItem *)obj endTimeInSeconds])) {
             return true;
@@ -160,6 +166,17 @@
             return false;
         }
     }];
+    
+    
+    //When the CMTime is not found, it result NSNotFound. The return value will become a big number.
+    //It always happens when the audio at the beginning, the CMTime is very small.
+    //So add a SubRipItem at index 0 when init a SubRip, in this SubRipItem make the textLine @" "(show nothing); so that when the index is NSNotFound, it can set index as 0
+    
+    if (index==NSNotFound) {
+        return 0;
+    }else{
+        return index;
+    }
 }
 
 -(NSUInteger)indexOfSubRipItemWithCharacterIndex:(NSUInteger)idx {
